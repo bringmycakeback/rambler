@@ -4,6 +4,8 @@ interface Place {
   name: string;
   years: string;
   description: string;
+  lat: number;
+  lng: number;
 }
 
 interface PlacesListProps {

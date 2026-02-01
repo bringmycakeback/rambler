@@ -31,10 +31,14 @@ For the historical figure "${name}", return a JSON object with the following str
     {
       "name": "City, Country",
       "years": "1706-1723",
-      "description": "Brief description of their time there (1-2 sentences)"
+      "description": "Brief description of their time there (1-2 sentences)",
+      "lat": 39.9526,
+      "lng": -75.1652
     }
   ]
 }
+
+Include accurate latitude and longitude coordinates for each place.
 
 If the person is not a recognized historical figure or you cannot find reliable information, return:
 {
