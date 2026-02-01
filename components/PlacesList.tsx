@@ -13,6 +13,7 @@ interface PlacesListProps {
   figureName: string;
   error?: string;
   isLoading: boolean;
+  visibleCount: number;
 }
 
 export default function PlacesList({
@@ -20,6 +21,7 @@ export default function PlacesList({
   figureName,
   error,
   isLoading,
+  visibleCount,
 }: PlacesListProps) {
   if (isLoading) {
     return (
@@ -68,11 +70,11 @@ export default function PlacesList({
     );
   }
 
-  if (places.length === 0) {
+  if (places.length === 0 && visibleCount === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-stone-500 text-center">
-          No places found for {figureName}
+        <p className="text-stone-400 text-center italic">
+          Tracing their journey...
         </p>
       </div>
     );
@@ -84,11 +86,15 @@ export default function PlacesList({
         Places of <span className="italic">{figureName}</span>
       </h2>
       <div className="space-y-6">
-        {places.map((place, index) => (
+        {places.slice(0, visibleCount).map((place, index) => (
           <article
             key={index}
             className="group border-l-2 border-stone-200 pl-6 py-2
-                       hover:border-stone-400 transition-colors duration-200"
+                       hover:border-stone-400 transition-all duration-500
+                       animate-fade-in-up"
+            style={{
+              animationDelay: `${index * 100}ms`,
+            }}
           >
             <div className="flex items-baseline justify-between mb-2">
               <h3 className="text-lg font-medium text-stone-800">{place.name}</h3>

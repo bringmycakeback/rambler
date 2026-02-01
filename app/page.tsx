@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import SearchInput from "@/components/SearchInput";
 import PlacesList from "@/components/PlacesList";
@@ -27,12 +27,42 @@ export default function Home() {
   const [figureName, setFigureName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [visibleCount, setVisibleCount] = useState(0);
+
+  // Show the first two places after data loads to kick off the animation
+  useEffect(() => {
+    if (places.length > 0 && visibleCount === 0) {
+      // Small delay before showing first place
+      const timer = setTimeout(() => {
+        setVisibleCount(1);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+    // After first place appears, show second place to start path animation
+    if (places.length > 1 && visibleCount === 1) {
+      const timer = setTimeout(() => {
+        setVisibleCount(2);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [places, visibleCount]);
+
+  // Called by the map when a path animation completes
+  const handlePathAnimationComplete = useCallback(() => {
+    setVisibleCount((prev) => {
+      if (prev < places.length) {
+        return prev + 1;
+      }
+      return prev;
+    });
+  }, [places.length]);
 
   const handleSearch = async (name: string) => {
     setIsLoading(true);
     setError("");
     setFigureName(name);
     setPlaces([]);
+    setVisibleCount(0);
 
     try {
       const response = await fetch("/api/places", {
@@ -80,7 +110,11 @@ export default function Home() {
         {(figureName || isLoading) && (
           <div className="grid md:grid-cols-2 gap-8">
             <section className="h-[500px]">
-              <PlacesMap places={places} />
+              <PlacesMap
+                places={places}
+                visibleCount={visibleCount}
+                onPathAnimationComplete={handlePathAnimationComplete}
+              />
             </section>
 
             <section className="h-[500px] overflow-y-auto">
@@ -89,6 +123,7 @@ export default function Home() {
                 figureName={figureName}
                 error={error}
                 isLoading={isLoading}
+                visibleCount={visibleCount}
               />
             </section>
           </div>
