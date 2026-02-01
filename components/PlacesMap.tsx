@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -247,11 +247,69 @@ function MapController({
   return null;
 }
 
-function AnimatedMarker({ place, isVisible }: { place: Place; isVisible: boolean }) {
+function AnimatedMarker({
+  place,
+  isVisible,
+  index,
+  allPlaces
+}: {
+  place: Place;
+  isVisible: boolean;
+  index: number;
+  allPlaces: Place[];
+}) {
   if (!isVisible) return null;
+
+  // Get just the city name (before the comma)
+  const cityName = place.name.split(",")[0].trim();
+
+  // Calculate best tooltip direction to avoid overlaps
+  const getTooltipDirection = (): "top" | "bottom" | "left" | "right" => {
+    const prevPlace = index > 0 ? allPlaces[index - 1] : null;
+    const nextPlace = index < allPlaces.length - 1 ? allPlaces[index + 1] : null;
+
+    // Check if neighbors are close (within ~2 degrees)
+    const isCloseToNeighbor = (neighbor: Place | null) => {
+      if (!neighbor) return false;
+      const latDiff = Math.abs(neighbor.lat - place.lat);
+      const lngDiff = Math.abs(neighbor.lng - place.lng);
+      return latDiff < 3 && lngDiff < 5;
+    };
+
+    const closeToPrev = isCloseToNeighbor(prevPlace);
+    const closeToNext = isCloseToNeighbor(nextPlace);
+
+    if (!closeToPrev && !closeToNext) {
+      return "top";
+    }
+
+    // Alternate based on index for close places
+    const directions: ("top" | "bottom" | "left" | "right")[] = ["top", "right", "bottom", "left"];
+    return directions[index % 4];
+  };
+
+  const direction = getTooltipDirection();
+
+  // Adjust offset based on direction
+  const getOffset = (): [number, number] => {
+    switch (direction) {
+      case "top": return [0, -35];
+      case "bottom": return [0, 20];
+      case "left": return [-20, -15];
+      case "right": return [20, -15];
+    }
+  };
 
   return (
     <Marker position={[place.lat, place.lng]}>
+      <Tooltip
+        permanent
+        direction={direction}
+        offset={getOffset()}
+        className="place-label"
+      >
+        {cityName}
+      </Tooltip>
       <Popup>
         <div className="text-sm">
           <strong>{place.name}</strong>
@@ -323,8 +381,8 @@ export default function PlacesMap({ places, visibleCount, onPathAnimationComplet
       style={{ minHeight: "400px" }}
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"
       />
 
       <MapController
@@ -358,6 +416,8 @@ export default function PlacesMap({ places, visibleCount, onPathAnimationComplet
           key={index}
           place={place}
           isVisible={index < visibleCount}
+          index={index}
+          allPlaces={validPlaces}
         />
       ))}
     </MapContainer>
