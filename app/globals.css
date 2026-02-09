@@ -3,10 +3,23 @@
 @theme inline {
   --font-serif: var(--font-serif);
   --font-sans: var(--font-sans);
+
+  /* Faherty-inspired color palette */
+  --color-cream: #fcfaf6;
+  --color-cream-dark: #f5f2eb;
+  --color-charcoal: #1e2020;
+  --color-charcoal-light: #3d3f3f;
+  --color-warm-gray: #6b6966;
+  --color-warm-gray-light: #9c9892;
+  --color-terracotta: #ba5b3f;
+  --color-terracotta-dark: #a04e35;
+  --color-sage: #607466;
 }
 
 body {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--color-cream);
+  color: var(--color-charcoal);
 }
 
 .font-serif {
@@ -15,25 +28,24 @@ body {
 
 /* Smooth transitions for interactive elements */
 input, button, article {
-  transition: all 0.2s ease-in-out;
+  transition: all 0.3s ease;
 }
 
 /* Custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #fafaf9;
+  background: var(--color-cream);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d6d3d1;
-  border-radius: 4px;
+  background: var(--color-warm-gray-light);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a29e;
+  background: var(--color-warm-gray);
 }
 
 /* Animation for places appearing */

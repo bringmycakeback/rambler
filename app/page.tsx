@@ -9,8 +9,8 @@ import ModelSelector from "@/components/ModelSelector";
 const PlacesMap = dynamic(() => import("@/components/PlacesMap"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full bg-stone-100 flex items-center justify-center rounded-lg min-h-[400px]">
-      <p className="text-stone-400">Loading map...</p>
+    <div className="w-full h-full bg-[var(--color-cream-dark)] flex items-center justify-center min-h-[400px]">
+      <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-warm-gray-light)]">Loading map...</p>
     </div>
   ),
 });
@@ -94,30 +94,46 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-stone-50">
-      <div className="absolute top-4 right-4">
+    <main className="min-h-screen bg-[var(--color-cream)] relative">
+      {/* Old map background with fade */}
+      <div
+        className="absolute inset-x-0 top-0 h-[70vh] pointer-events-none"
+        style={{
+          backgroundImage: `url('/old-map-bg.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          opacity: 0.12,
+          maskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)',
+        }}
+      />
+      <div className="relative z-10">
+      <div className="absolute top-6 right-6 md:top-8 md:right-8">
         <ModelSelector
           selectedModel={selectedModel}
           onModelChange={setSelectedModel}
         />
       </div>
-      <div className="max-w-6xl mx-auto px-6 py-12 md:py-16">
-        <header className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-serif text-stone-800 mb-4">
+      <div className="max-w-6xl mx-auto px-8 md:px-12 py-16 md:py-24">
+        <header className="text-center mb-16 md:mb-20">
+          <p className="text-xs tracking-[0.3em] uppercase text-[var(--color-warm-gray)] mb-6">
+            A Journey Through Time
+          </p>
+          <h1 className="text-4xl md:text-6xl font-serif font-light text-[var(--color-charcoal)] mb-6 tracking-tight">
             Historical Places
           </h1>
-          <p className="text-stone-500 text-lg max-w-xl mx-auto">
-            Discover the places where history&apos;s notable figures lived
+          <p className="text-[var(--color-warm-gray)] text-lg md:text-xl max-w-2xl mx-auto font-light leading-relaxed">
+            Discover the places where history&apos;s notable figures lived, worked, and left their mark on the world
           </p>
         </header>
 
-        <div className="max-w-xl mx-auto mb-10">
+        <div className="max-w-lg mx-auto mb-16 md:mb-20">
           <SearchInput onSearch={handleSearch} isLoading={isLoading} />
         </div>
 
         {(figureName || isLoading) && (
-          <div className="grid md:grid-cols-2 gap-8">
-            <section className="h-[500px]">
+          <div className="grid md:grid-cols-2 gap-12 md:gap-16">
+            <section className="h-[500px] md:h-[600px]">
               <PlacesMap
                 places={places}
                 visibleCount={visibleCount}
@@ -125,7 +141,7 @@ export default function Home() {
               />
             </section>
 
-            <section className="h-[500px] overflow-y-auto">
+            <section className="h-[500px] md:h-[600px] overflow-y-auto pr-4">
               <PlacesList
                 places={places}
                 figureName={figureName}
@@ -136,6 +152,7 @@ export default function Home() {
             </section>
           </div>
         )}
+      </div>
       </div>
     </main>
   );
