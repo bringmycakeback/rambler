@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import SearchInput from "@/components/SearchInput";
 import PlacesList from "@/components/PlacesList";
+import ModelSelector from "@/components/ModelSelector";
 
 const PlacesMap = dynamic(() => import("@/components/PlacesMap"), {
   ssr: false,
@@ -28,6 +29,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [visibleCount, setVisibleCount] = useState(0);
+  const [selectedModel, setSelectedModel] = useState("gemini-2.0-flash");
 
   // Show the first two places after data loads to kick off the animation
   useEffect(() => {
@@ -70,7 +72,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, model: selectedModel }),
       });
 
       const data = await response.json();
@@ -93,6 +95,12 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-stone-50">
+      <div className="absolute top-4 right-4">
+        <ModelSelector
+          selectedModel={selectedModel}
+          onModelChange={setSelectedModel}
+        />
+      </div>
       <div className="max-w-6xl mx-auto px-6 py-12 md:py-16">
         <header className="text-center mb-10">
           <h1 className="text-4xl md:text-5xl font-serif text-stone-800 mb-4">

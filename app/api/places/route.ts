@@ -5,7 +5,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function POST(request: NextRequest) {
   try {
-    const { name } = await request.json();
+    const { name, model: modelId } = await request.json();
 
     if (!name || typeof name !== "string") {
       return NextResponse.json(
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: modelId || "gemini-2.0-flash" });
 
     const prompt = `You are a historian. Given the name of a historical figure, return a JSON object listing the places where they lived during their lifetime, in chronological order.
 
@@ -39,6 +39,8 @@ For the historical figure "${name}", return a JSON object with the following str
 }
 
 Include accurate latitude and longitude coordinates for each place.
+
+For the final place, mention when and where the person died, and where they are buried if that information is known.
 
 If the person is not a recognized historical figure or you cannot find reliable information, return:
 {
