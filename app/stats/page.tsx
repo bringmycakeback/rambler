@@ -48,8 +48,20 @@ export default function StatsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--color-cream)]">
-      <div className="max-w-4xl mx-auto px-8 md:px-12 py-16 md:py-24">
+    <main className="min-h-screen bg-[var(--color-cream)] relative">
+      {/* Old map background with fade */}
+      <div
+        className="absolute inset-x-0 top-0 h-[70vh] pointer-events-none"
+        style={{
+          backgroundImage: `url('/old-map-bg.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          opacity: 0.12,
+          maskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)',
+        }}
+      />
+      <div className="relative z-10 max-w-4xl mx-auto px-8 md:px-12 py-16 md:py-24">
         <div className="mb-8">
           <Link
             href="/"
