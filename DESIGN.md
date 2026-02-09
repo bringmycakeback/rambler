@@ -6,7 +6,11 @@ A web application that visualizes the journey of historical figures through the 
 
 ```
 app/
-├── api/places/route.ts    # Gemini AI endpoint
+├── api/
+│   ├── models/route.ts    # Fetch available Gemini models
+│   ├── places/route.ts    # Gemini AI endpoint with caching
+│   └── stats/route.ts     # Usage statistics endpoint
+├── stats/page.tsx         # Stats page
 ├── page.tsx               # Main orchestrator component
 ├── layout.tsx             # Root layout with fonts
 └── globals.css            # Tailwind + custom animations
@@ -14,7 +18,14 @@ app/
 components/
 ├── PlacesMap.tsx          # Interactive map with animated paths
 ├── PlacesList.tsx         # Sidebar showing place details
-└── SearchInput.tsx        # Search form
+├── SearchInput.tsx        # Search form
+└── ModelSelector.tsx      # Gemini model dropdown
+
+lib/
+└── redis.ts               # Upstash Redis client and helpers
+
+public/
+└── old-map-bg.jpg         # Vintage map background image
 ```
 
 ## Technology Choices
@@ -23,9 +34,10 @@ components/
 |------------|--------|-----------|
 | Framework | Next.js 16 | Server-side API routes, React 19 support |
 | Map | Leaflet + react-leaflet | Lightweight, customizable, good React integration |
-| AI | Gemini 2.0 Flash | Fast responses, good at structured JSON output |
+| AI | Gemini (user-selectable model) | Fast responses, good at structured JSON output |
 | Styling | Tailwind CSS 4 | Rapid prototyping, consistent design tokens |
 | Fonts | Playfair Display + Inter | Historical serif feel with readable body text |
+| Caching | Upstash Redis | Serverless-friendly, REST API, persistent storage |
 
 ## Key Design Decisions
 
@@ -74,6 +86,7 @@ Instead of a static database, the app uses Gemini AI to generate place data on d
 - Years they lived there
 - Brief description
 - Latitude/longitude coordinates
+- Death and burial information for the final place
 
 **Tradeoffs**:
 - Pro: Works for any historical figure without pre-populating data
@@ -81,12 +94,52 @@ Instead of a static database, the app uses Gemini AI to generate place data on d
 - Con: Subject to API rate limits
 - Con: Occasional inaccuracies in coordinates or facts
 
-### 6. Visual Design Language
+### 6. User-Selectable AI Model
 
-- **Color palette**: Stone/gray tones with amber accents for paths
-- **Typography**: Serif headers (Playfair Display) evoke historical documents
-- **Animations**: Subtle fade-in-up for list items, drop animation for markers
-- **Layout**: Two-column grid with map and list side-by-side on desktop
+Users can choose which Gemini model to use via a dropdown in the top-right corner. The app fetches available models from the Gemini API at runtime, filtering to only those that support content generation.
+
+### 7. Redis Caching
+
+Results are cached in Upstash Redis to reduce API calls and improve response times:
+- Cache key: `cache:{normalized_name}:{model}`
+- TTL: 7 days
+- Cache hits still increment request counts for stats
+
+The app gracefully handles missing Redis configuration - caching is simply skipped if environment variables aren't set.
+
+### 8. Usage Statistics
+
+A `/stats` page shows all historical figures that have been searched:
+- Request count per figure
+- Model used for the most recent request
+- Last requested timestamp
+
+Stats are stored in Redis with a separate key pattern (`stats:{normalized_name}`) and a set (`stats:all_figures`) for listing.
+
+### 9. Visual Design Language (Faherty-Inspired)
+
+The design draws inspiration from the Faherty clothing brand's website aesthetic:
+
+- **Color palette**:
+  - Warm cream background (#fcfaf6)
+  - Deep charcoal text (#1e2020)
+  - Terracotta accents (#ba5b3f) for buttons and highlights
+  - Warm gray for secondary text
+- **Typography**:
+  - Light-weight serif headers (Playfair Display) for elegance
+  - Clean sans-serif body text (Inter)
+  - Generous letter-spacing on labels
+- **Spacing**: Generous padding and margins throughout
+- **Buttons**: Flat, no border-radius, uppercase tracking
+- **Background**: Vintage map image with fade-out gradient overlay
+
+### 10. Vintage Map Background
+
+Both the main page and stats page feature a vintage map image as a background that:
+- Covers the top 70% of the viewport
+- Has low opacity (12%) for subtlety
+- Fades out smoothly toward the bottom using CSS mask gradients
+- Is stored locally (`public/old-map-bg.jpg`) to avoid external dependencies
 
 ## Data Flow
 
@@ -95,9 +148,17 @@ User enters name → SearchInput
                         ↓
               page.tsx handleSearch()
                         ↓
-              POST /api/places { name }
+              POST /api/places { name, model }
                         ↓
-              Gemini AI generates places JSON
+              Check Redis cache
+                   ↓         ↓
+              [Cache hit]  [Cache miss]
+                   ↓              ↓
+              Return cached   Gemini AI generates places JSON
+                   ↓              ↓
+              Update stats    Cache result + Update stats
+                   ↓              ↓
+              ←←←←←←←←←←←←←←←←←←←←
                         ↓
               page.tsx receives places array
                         ↓
@@ -119,9 +180,10 @@ User enters name → SearchInput
 ## Component Responsibilities
 
 ### page.tsx
-- Owns all state (places, visibleCount, loading, error)
+- Owns all state (places, visibleCount, loading, error, selectedModel)
 - Coordinates timing between components
 - Handles API calls
+- Renders vintage map background
 
 ### PlacesMap.tsx
 - Renders Leaflet map with markers and paths
@@ -136,6 +198,28 @@ User enters name → SearchInput
 ### SearchInput.tsx
 - Controlled form input
 - Prevents submission while loading
+
+### ModelSelector.tsx
+- Fetches available models from `/api/models`
+- Dropdown for model selection
+- Passes selected model to parent
+
+### stats/page.tsx
+- Fetches and displays usage statistics
+- Table with figure name, request count, model, last requested
+- Same vintage map background as main page
+
+## API Endpoints
+
+### POST /api/places
+Request body: `{ name: string, model?: string }`
+Response: `{ places: Place[], cached?: boolean }`
+
+### GET /api/models
+Response: `{ models: { id: string, name: string }[] }`
+
+### GET /api/stats
+Response: `{ stats: FigureStats[] }`
 
 ## Animation Details
 
@@ -173,17 +257,27 @@ useEffect(() => {
 }
 ```
 
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GEMINI_API_KEY` | Yes | Google AI Studio API key |
+| `UPSTASH_REDIS_REST_URL` | No | Upstash Redis REST URL |
+| `UPSTASH_REDIS_REST_TOKEN` | No | Upstash Redis REST token |
+
+The app works without Redis configured - caching and stats are simply disabled.
+
 ## Known Limitations
 
-1. **No caching**: Each search makes a fresh API call, even for repeated queries
-2. **Rate limits**: Gemini free tier has low request limits
-3. **Coordinate accuracy**: AI-generated coordinates may be approximate
-4. **No offline support**: Requires internet for both map tiles and AI
-5. **Single user**: No concept of user sessions or saved searches
+1. **Rate limits**: Gemini free tier has low request limits
+2. **Coordinate accuracy**: AI-generated coordinates may be approximate
+3. **No offline support**: Requires internet for both map tiles and AI
+4. **Single user**: No concept of user sessions or saved searches
+5. **No authentication**: Anyone can use your API quota
 
 ## Future Improvements
 
-- Add response caching (Redis or in-memory)
+- Add user authentication to protect API usage
 - Implement request debouncing
 - Add error retry with exponential backoff
 - Save favorite historical figures
