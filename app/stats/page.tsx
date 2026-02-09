@@ -124,7 +124,7 @@ export default function StatsPage() {
                     </td>
                     <td className="py-5 px-6 text-center">
                       <span className="inline-flex items-center justify-center w-8 h-8 bg-[var(--color-terracotta)] text-white text-sm font-medium rounded-full">
-                        {stat.requestCount}
+                        {stat.requestCount ?? 1}
                       </span>
                     </td>
                     <td className="py-5 px-6">

@@ -86,18 +86,18 @@ export async function updateStats(
   try {
     // Get existing stats or create new
     const existing = await redis.get<FigureStats>(statsKey);
+    const currentCount = typeof existing?.requestCount === 'number' ? existing.requestCount : 0;
 
     const stats: FigureStats = {
       name: existing?.name || name, // Keep original casing from first request
       normalizedName,
-      requestCount: (existing?.requestCount || 0) + 1,
+      requestCount: currentCount + 1,
       model,
       lastRequested: new Date().toISOString(),
     };
 
+    // Set stats first, then add to the list (avoid race condition)
     await redis.set(statsKey, stats);
-
-    // Add to the set of all figures (for listing)
     await redis.sadd(STATS_LIST_KEY, normalizedName);
   } catch (error) {
     console.error("Redis stats update error:", error);
@@ -119,12 +119,18 @@ export async function getAllStats(): Promise<FigureStats[]> {
       redis.get<FigureStats>(`${STATS_PREFIX}${name}`)
     );
 
-    const stats = await Promise.all(statsPromises);
+    const statsResults = await Promise.all(statsPromises);
 
-    // Filter out nulls and sort by request count
-    return stats
-      .filter((s): s is FigureStats => s !== null)
+    // Filter out nulls, ensure requestCount exists, and sort
+    const stats = statsResults
+      .filter((s): s is FigureStats => s !== null && typeof s === 'object')
+      .map((s) => ({
+        ...s,
+        requestCount: typeof s.requestCount === 'number' ? s.requestCount : 1,
+      }))
       .sort((a, b) => b.requestCount - a.requestCount);
+
+    return stats;
   } catch (error) {
     console.error("Redis get all stats error:", error);
     return [];
