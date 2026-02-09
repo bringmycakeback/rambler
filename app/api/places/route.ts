@@ -1,11 +1,18 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  getCachedResult,
+  cacheResult,
+  updateStats,
+  isRedisConfigured,
+} from "@/lib/redis";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function POST(request: NextRequest) {
   try {
     const { name, model: modelId } = await request.json();
+    const selectedModel = modelId || "gemini-2.0-flash";
 
     if (!name || typeof name !== "string") {
       return NextResponse.json(
@@ -21,7 +28,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const model = genAI.getGenerativeModel({ model: modelId || "gemini-2.0-flash" });
+    // Check cache first (if Redis is configured)
+    if (isRedisConfigured()) {
+      const cached = await getCachedResult(name, selectedModel);
+      if (cached) {
+        console.log(`Cache hit for "${name}" with model ${selectedModel}`);
+        // Update stats even for cache hits
+        await updateStats(name, selectedModel);
+        return NextResponse.json({ places: cached.places, cached: true });
+      }
+    }
+
+    const model = genAI.getGenerativeModel({ model: selectedModel });
 
     const prompt = `You are a historian. Given the name of a historical figure, return a JSON object listing the places where they lived during their lifetime, in chronological order.
 
@@ -57,6 +75,12 @@ Return ONLY the JSON object, no markdown formatting or additional text.`;
     // Parse the JSON response
     const cleanedText = text.replace(/```json\n?|\n?```/g, "").trim();
     const data = JSON.parse(cleanedText);
+
+    // Cache the result and update stats (if Redis is configured)
+    if (isRedisConfigured() && data.places && data.places.length > 0) {
+      await cacheResult(name, selectedModel, data.places);
+      await updateStats(name, selectedModel);
+    }
 
     return NextResponse.json(data);
   } catch (error) {

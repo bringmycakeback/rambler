@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import SearchInput from "@/components/SearchInput";
 import PlacesList from "@/components/PlacesList";
 import ModelSelector from "@/components/ModelSelector";
@@ -108,11 +109,17 @@ export default function Home() {
         }}
       />
       <div className="relative z-10">
-      <div className="absolute top-6 right-6 md:top-8 md:right-8">
+      <div className="absolute top-6 right-6 md:top-8 md:right-8 flex flex-col items-end gap-3">
         <ModelSelector
           selectedModel={selectedModel}
           onModelChange={setSelectedModel}
         />
+        <Link
+          href="/stats"
+          className="text-xs tracking-[0.1em] uppercase text-[var(--color-warm-gray)] hover:text-[var(--color-terracotta)] transition-colors"
+        >
+          View Stats
+        </Link>
       </div>
       <div className="max-w-6xl mx-auto px-8 md:px-12 py-16 md:py-24">
         <header className="text-center mb-16 md:mb-20">
