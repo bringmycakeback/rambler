@@ -130,9 +130,12 @@ export default function StatsPage() {
                     }}
                   >
                     <td className="py-5 pr-6">
-                      <span className="font-serif text-lg text-[var(--color-charcoal)]">
+                      <Link
+                        href={`/?search=${encodeURIComponent(stat.name)}`}
+                        className="font-serif text-lg text-[var(--color-charcoal)] hover:text-[var(--color-terracotta)] transition-colors"
+                      >
                         {stat.name}
-                      </span>
+                      </Link>
                     </td>
                     <td className="py-5 px-6 text-center">
                       <span className="inline-flex items-center justify-center w-8 h-8 bg-[#ba5b3f] text-white text-sm font-medium rounded-full">

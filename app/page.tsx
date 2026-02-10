@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import SearchInput from "@/components/SearchInput";
@@ -25,12 +26,39 @@ interface Place {
 }
 
 export default function Home() {
+  return (
+    <Suspense>
+      <HomeContent />
+    </Suspense>
+  );
+}
+
+function HomeContent() {
   const [places, setPlaces] = useState<Place[]>([]);
   const [figureName, setFigureName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [visibleCount, setVisibleCount] = useState(0);
   const [selectedModel, setSelectedModel] = useState("gemini-2.0-flash");
+  const [statusMessage, setStatusMessage] = useState("");
+  const searchParams = useSearchParams();
+  const hasAutoSearched = useRef(false);
+
+  // Clear status when places start appearing
+  useEffect(() => {
+    if (visibleCount > 0) {
+      setStatusMessage("");
+    }
+  }, [visibleCount]);
+
+  // Auto-search when navigating with ?search= query param (e.g. from stats page)
+  useEffect(() => {
+    const name = searchParams.get("search");
+    if (name && !hasAutoSearched.current) {
+      hasAutoSearched.current = true;
+      handleSearch(name);
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Show the first two places after data loads to kick off the animation
   useEffect(() => {
@@ -66,6 +94,7 @@ export default function Home() {
     setFigureName(name);
     setPlaces([]);
     setVisibleCount(0);
+    setStatusMessage(`Querying Gemini API · ${selectedModel}`);
 
     try {
       const response = await fetch("/api/places", {
@@ -84,11 +113,18 @@ export default function Home() {
 
       if (data.error) {
         setError(data.error);
+        setStatusMessage("");
       } else {
+        setStatusMessage(
+          data.cached
+            ? "Loaded from cache"
+            : `Response from Gemini · ${selectedModel}`
+        );
         setPlaces(data.places || []);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
+      setStatusMessage("");
     } finally {
       setIsLoading(false);
     }
@@ -135,7 +171,17 @@ export default function Home() {
         </header>
 
         <div className="max-w-lg mx-auto mb-16 md:mb-20">
-          <SearchInput onSearch={handleSearch} isLoading={isLoading} />
+          <SearchInput onSearch={handleSearch} isLoading={isLoading} defaultValue={searchParams.get("search") || ""} />
+          {statusMessage && (
+            <div className="mt-4 text-center animate-fade-in-up">
+              <p className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-[var(--color-warm-gray)]">
+                {isLoading && (
+                  <span className="inline-block w-3 h-3 border border-[var(--color-warm-gray)] border-t-transparent rounded-full animate-spin" />
+                )}
+                {statusMessage}
+              </p>
+            </div>
+          )}
         </div>
 
         {(figureName || isLoading) && (

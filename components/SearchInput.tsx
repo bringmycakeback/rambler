@@ -5,10 +5,11 @@ import { useState, FormEvent } from "react";
 interface SearchInputProps {
   onSearch: (name: string) => void;
   isLoading: boolean;
+  defaultValue?: string;
 }
 
-export default function SearchInput({ onSearch, isLoading }: SearchInputProps) {
-  const [name, setName] = useState("");
+export default function SearchInput({ onSearch, isLoading, defaultValue = "" }: SearchInputProps) {
+  const [name, setName] = useState(defaultValue);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
