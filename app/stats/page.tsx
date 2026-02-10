@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface FigureStats {
@@ -15,6 +16,7 @@ export default function StatsPage() {
   const [stats, setStats] = useState<FigureStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchStats() {
@@ -62,13 +64,22 @@ export default function StatsPage() {
         }}
       />
       <div className="relative z-10 max-w-4xl mx-auto px-8 md:px-12 py-16 md:py-24">
-        <div className="mb-8">
+        <div className="mb-8 flex items-center justify-between">
           <Link
             href="/"
             className="text-xs tracking-[0.2em] uppercase text-[var(--color-terracotta)] hover:text-[var(--color-terracotta-dark)] transition-colors"
           >
             &larr; Back to Search
           </Link>
+          <button
+            onClick={async () => {
+              await fetch("/api/auth/logout", { method: "POST" });
+              router.push("/login");
+            }}
+            className="text-xs tracking-[0.1em] uppercase text-[var(--color-warm-gray)] hover:text-[var(--color-terracotta)] transition-colors"
+          >
+            Log Out
+          </button>
         </div>
 
         <header className="mb-16">

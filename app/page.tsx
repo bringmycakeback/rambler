@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import SearchInput from "@/components/SearchInput";
@@ -42,6 +42,7 @@ function HomeContent() {
   const [selectedModel, setSelectedModel] = useState("gemini-2.0-flash");
   const [statusMessage, setStatusMessage] = useState("");
   const searchParams = useSearchParams();
+  const router = useRouter();
   const hasAutoSearched = useRef(false);
 
   // Clear status when places start appearing
@@ -150,12 +151,23 @@ function HomeContent() {
           selectedModel={selectedModel}
           onModelChange={setSelectedModel}
         />
-        <Link
-          href="/stats"
-          className="text-xs tracking-[0.1em] uppercase text-[var(--color-warm-gray)] hover:text-[var(--color-terracotta)] transition-colors"
-        >
-          View Stats
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/stats"
+            className="text-xs tracking-[0.1em] uppercase text-[var(--color-warm-gray)] hover:text-[var(--color-terracotta)] transition-colors"
+          >
+            View Stats
+          </Link>
+          <button
+            onClick={async () => {
+              await fetch("/api/auth/logout", { method: "POST" });
+              router.push("/login");
+            }}
+            className="text-xs tracking-[0.1em] uppercase text-[var(--color-warm-gray)] hover:text-[var(--color-terracotta)] transition-colors"
+          >
+            Log Out
+          </button>
+        </div>
       </div>
       <div className="max-w-6xl mx-auto px-8 md:px-12 py-16 md:py-24">
         <header className="text-center mb-16 md:mb-20">
@@ -163,10 +175,10 @@ function HomeContent() {
             A Journey Through Time
           </p>
           <h1 className="text-4xl md:text-6xl font-serif font-light text-[var(--color-charcoal)] mb-6 tracking-tight">
-            Historical Places
+            Paths of Past Lives
           </h1>
           <p className="text-[var(--color-warm-gray)] text-lg md:text-xl max-w-2xl mx-auto font-light leading-relaxed">
-            Discover the places where history&apos;s notable figures lived, worked, and left their mark on the world
+            Each life, drawn on a map. A line, a zag, a loop.
           </p>
         </header>
 
