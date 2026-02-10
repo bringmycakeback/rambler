@@ -277,7 +277,8 @@ The app works without Redis configured - caching and stats are simply disabled.
 
 ## Future Improvements
 
-- Add user authentication to protect API usage
+- ~~Add user authentication to protect API usage~~ ✓ Done (middleware + Redis sessions)
+- Fix the Gemini prompt to better handle explorers/conquerors who traveled through places without living there (e.g., Marco Polo, Genghis Khan, Magellan) — current prompt asks for places they "lived", which misses key journey locations
 - Implement request debouncing
 - Add error retry with exponential backoff
 - Save favorite historical figures
