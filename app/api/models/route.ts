@@ -21,8 +21,11 @@ export async function GET() {
 
     // Filter to only models that support generateContent
     const models = data.models
-      .filter((model: { supportedGenerationMethods: string[] }) =>
-        model.supportedGenerationMethods?.includes("generateContent")
+      .filter(
+        (model: { supportedGenerationMethods: string[]; displayName: string }) =>
+          model.supportedGenerationMethods?.includes("generateContent") &&
+          model.displayName?.includes("Gemini") &&
+          !/robotics|experimental/i.test(model.displayName)
       )
       .map((model: { name: string; displayName: string }) => ({
         id: model.name.replace("models/", ""),
