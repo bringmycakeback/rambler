@@ -137,6 +137,32 @@ export async function getAllStats(): Promise<FigureStats[]> {
   }
 }
 
+// Check if any cache entries exist for a name (across all models)
+export async function hasCacheEntries(name: string): Promise<boolean> {
+  const normalizedName = normalizeName(name);
+  try {
+    const keys = await redis.keys(`${CACHE_PREFIX}${normalizedName}:*`);
+    return keys.length > 0;
+  } catch (error) {
+    console.error("Redis hasCacheEntries error:", error);
+    return false;
+  }
+}
+
+// Purge all cache entries for a name (across all models)
+export async function purgeCacheEntries(name: string): Promise<boolean> {
+  const normalizedName = normalizeName(name);
+  try {
+    const keys = await redis.keys(`${CACHE_PREFIX}${normalizedName}:*`);
+    if (keys.length === 0) return true;
+    await redis.del(...keys);
+    return true;
+  } catch (error) {
+    console.error("Redis purgeCacheEntries error:", error);
+    return false;
+  }
+}
+
 // Check if Redis is configured
 export function isRedisConfigured(): boolean {
   return !!(

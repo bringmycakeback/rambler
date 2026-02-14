@@ -10,12 +10,14 @@ interface FigureStats {
   requestCount: number;
   model: string;
   lastRequested: string;
+  hasCachedData: boolean;
 }
 
 export default function StatsPage() {
   const [stats, setStats] = useState<FigureStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [purging, setPurging] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -47,6 +49,31 @@ export default function StatsPage() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const handlePurge = async (normalizedName: string) => {
+    setPurging(normalizedName);
+    try {
+      const res = await fetch("/api/stats", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ normalizedName }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStats((prev) =>
+          prev.map((s) =>
+            s.normalizedName === normalizedName
+              ? { ...s, hasCachedData: false }
+              : s
+          )
+        );
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setPurging(null);
+    }
   };
 
   return (
@@ -124,8 +151,11 @@ export default function StatsPage() {
                   <th className="text-left py-4 px-6 text-xs tracking-[0.15em] uppercase text-[var(--color-warm-gray)] font-medium">
                     Model
                   </th>
-                  <th className="text-right py-4 pl-6 text-xs tracking-[0.15em] uppercase text-[var(--color-warm-gray)] font-medium">
+                  <th className="text-right py-4 px-6 text-xs tracking-[0.15em] uppercase text-[var(--color-warm-gray)] font-medium">
                     Last Requested
+                  </th>
+                  <th className="text-center py-4 pl-6 text-xs tracking-[0.15em] uppercase text-[var(--color-warm-gray)] font-medium">
+                    Cache
                   </th>
                 </tr>
               </thead>
@@ -158,10 +188,23 @@ export default function StatsPage() {
                         {stat.model}
                       </span>
                     </td>
-                    <td className="py-5 pl-6 text-right">
+                    <td className="py-5 px-6 text-right">
                       <span className="text-sm text-[var(--color-warm-gray-light)]">
                         {formatDate(stat.lastRequested)}
                       </span>
+                    </td>
+                    <td className="py-5 pl-6 text-center">
+                      <button
+                        onClick={() => handlePurge(stat.normalizedName)}
+                        disabled={!stat.hasCachedData || purging === stat.normalizedName}
+                        className={`text-xs tracking-[0.1em] uppercase transition-colors ${
+                          stat.hasCachedData && purging !== stat.normalizedName
+                            ? "text-[var(--color-terracotta)] hover:text-[var(--color-terracotta-dark)] cursor-pointer"
+                            : "text-[var(--color-warm-gray-light)] cursor-default"
+                        }`}
+                      >
+                        {purging === stat.normalizedName ? "..." : "Purge"}
+                      </button>
                     </td>
                   </tr>
                 ))}
