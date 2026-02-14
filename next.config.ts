@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  outputFileTracingIncludes: {
+    "/api/suggest": ["./data/figures.json"],
+  },
 };
 
 export default nextConfig;
