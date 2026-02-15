@@ -143,7 +143,8 @@ export default function SearchInput({ onSearch, isLoading, defaultValue = "" }: 
             <ul
               id={dropdownId}
               role="listbox"
-              className="absolute z-50 left-0 right-0 top-full mt-1 bg-[var(--color-cream)] border border-[var(--color-warm-gray-light)] shadow-lg max-h-[360px] overflow-y-auto"
+              className="absolute left-0 right-0 top-full mt-1 bg-[var(--color-cream)] border border-[var(--color-warm-gray-light)] shadow-lg max-h-[360px] overflow-y-auto"
+              style={{ zIndex: 10000 }}
             >
               {suggestions.map((s, i) => (
                 <li
@@ -160,8 +161,8 @@ export default function SearchInput({ onSearch, isLoading, defaultValue = "" }: 
                 >
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="text-[var(--color-charcoal)] font-medium truncate">
-                      {s.c && <span className="text-green-600 mr-1.5" title="Cached">&#10003;</span>}
                       {s.n}
+                      {s.c && <span className="text-green-600 ml-1.5" title="Cached">&#10003;</span>}
                     </span>
                     {(s.b || s.y) && (
                       <span className="text-xs text-[var(--color-terracotta)] whitespace-nowrap flex-shrink-0">
