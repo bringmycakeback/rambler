@@ -17,14 +17,18 @@ Rambler is a Next.js 16 app that visualizes the geographical journey of historic
 
 ### Key Files
 
-- `app/page.tsx` — Main orchestrator. Manages state for places, animation sequencing (visibleCount), model selection, and status. Coordinates the staggered reveal of places as map path animations complete.
-- `app/api/places/route.ts` — Core API route. Calls Gemini with a structured prompt, parses JSON response, caches in Redis (7-day TTL). Returns `{ places, cached?: true }`.
-- `app/api/models/route.ts` — Fetches available Gemini models from Google's API, filtered to those supporting `generateContent`.
+- `app/page.tsx` — Main orchestrator. Manages state for places, animation sequencing (visibleCount), model selection, status, tagline, and portraitUrl. Coordinates the staggered reveal of places as map path animations complete.
+- `app/api/places/route.ts` — Core API route. Calls Gemini with a structured prompt (places + tagline), fetches Wikipedia portrait concurrently, caches in Redis (7-day TTL). Returns `{ places, tagline, portraitUrl, cached?, model }`. Retries with fallback models on transient errors.
+- `app/api/models/route.ts` — Fetches available Gemini models from Google's API, filtered to Gemini models supporting `generateContent`.
 - `app/api/stats/route.ts` — Returns per-figure request counts and metadata from Redis.
-- `lib/redis.ts` — Upstash Redis helpers. Cache keys: `cache:{name}:{model}`, stats keys: `stats:{name}`. Name normalization (lowercase, trimmed). Gracefully degrades if Redis is not configured.
+- `app/api/suggest/route.ts` — Autocomplete endpoint returning historical figure names from a ~130K Wikidata dataset.
+- `app/api/auth/login/route.ts` — Password auth; creates Redis session + sets cookie.
+- `app/api/auth/logout/route.ts` — Destroys session and clears cookie.
+- `middleware.ts` — Gates all routes (except `/login`, `/api/auth`) behind password auth via Redis sessions. Skipped if `AUTH_PASSWORD` is not set.
+- `lib/redis.ts` — Upstash Redis helpers. Cache keys: `cache:{name}:{model}` (includes tagline + portraitUrl), stats keys: `stats:{name}`, session keys: `session:{uuid}`. Name normalization (lowercase, trimmed). Gracefully degrades if Redis is not configured.
 - `components/PlacesMap.tsx` — Most complex component. Leaflet map with animated bezier curve paths between places, marker drop animations, auto-panning camera, and smart label positioning. Dynamically imported with `ssr: false` (Leaflet needs browser APIs).
-- `components/PlacesList.tsx` — Sidebar displaying place cards with staggered fade-in animations.
-- `components/SearchInput.tsx` — Search form with loading state.
+- `components/PlacesList.tsx` — Sidebar with sticky header (figure name, tagline, Wikipedia portrait) and place cards with staggered fade-in animations. Auto-scrolls to latest revealed place.
+- `components/SearchInput.tsx` — Search form with autocomplete suggestions from `/api/suggest`.
 - `components/ModelSelector.tsx` — Dropdown fetching available models from `/api/models`.
 
 ### Animation Sequencing
@@ -34,8 +38,9 @@ The reveal is driven by `visibleCount` in `page.tsx`. First place shows after 50
 ## Environment Variables
 
 - `GEMINI_API_KEY` (required) — Google Generative AI API key
-- `UPSTASH_REDIS_REST_URL` (optional) — Enables caching and stats
+- `UPSTASH_REDIS_REST_URL` (optional) — Enables caching, stats, and auth sessions
 - `UPSTASH_REDIS_REST_TOKEN` (optional) — Redis auth token
+- `AUTH_PASSWORD` (optional) — If set, gates access behind a password login
 
 ## Styling
 
