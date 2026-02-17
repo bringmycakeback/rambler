@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 interface Place {
   name: string;
   years: string;
@@ -64,9 +66,17 @@ export default function PlacesList({
     );
   }
 
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (visibleCount > 0) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [visibleCount]);
+
   return (
-    <div className="space-y-10">
-      <div className="border-b border-[var(--color-warm-gray-light)] pb-6">
+    <div className="flex flex-col min-h-full">
+      <div className="sticky top-0 z-10 bg-[var(--color-cream)] border-b border-[var(--color-warm-gray-light)] pb-6 mb-10">
         <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-warm-gray)] mb-3">The Journey of</p>
         <h2 className="text-3xl font-serif font-light text-[var(--color-charcoal)] italic">
           {figureName}
@@ -95,6 +105,7 @@ export default function PlacesList({
             </p>
           </article>
         ))}
+        <div ref={bottomRef} />
       </div>
     </div>
   );
