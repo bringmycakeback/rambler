@@ -9,6 +9,21 @@ import {
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+async function fetchWikipediaPortrait(name: string): Promise<string | null> {
+  try {
+    const encoded = encodeURIComponent(name.replace(/\s+/g, "_"));
+    const res = await fetch(
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encoded}`,
+      { headers: { "User-Agent": "Rambler/1.0 (historical figure map app)" } }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.thumbnail?.source || null;
+  } catch {
+    return null;
+  }
+}
+
 const FALLBACK_MODELS = [
   "gemini-2.0-flash",
   "gemini-2.5-flash",
@@ -32,7 +47,7 @@ function isRetryableError(error: unknown): boolean {
 async function tryGenerate(
   modelId: string,
   prompt: string
-): Promise<{ places: Array<{ name: string; years: string; description: string; lat: number; lng: number }>; error?: string }> {
+): Promise<{ places: Array<{ name: string; years: string; description: string; lat: number; lng: number }>; tagline?: string; error?: string }> {
   const model = genAI.getGenerativeModel({ model: modelId });
   const result = await model.generateContent(prompt);
   const response = await result.response;
@@ -66,7 +81,13 @@ export async function POST(request: NextRequest) {
       if (cached) {
         console.log(`Cache hit for "${name}" with model ${selectedModel}`);
         await updateStats(name, selectedModel);
-        return NextResponse.json({ places: cached.places, cached: true, model: selectedModel });
+        return NextResponse.json({
+          places: cached.places,
+          cached: true,
+          model: selectedModel,
+          tagline: cached.tagline,
+          portraitUrl: cached.portraitUrl,
+        });
       }
     }
 
@@ -74,6 +95,7 @@ export async function POST(request: NextRequest) {
 
 For the historical figure "${name}", return a JSON object with the following structure:
 {
+  "tagline": "A short, evocative phrase describing the person (without their name), e.g. 'Legendary baseball player for the Red Sox' or 'Renaissance polymath and painter'",
   "places": [
     {
       "name": "City, Country",
@@ -91,6 +113,7 @@ For the final place, mention when and where the person died, and where they are 
 
 If the person is not a recognized historical figure or you cannot find reliable information, return:
 {
+  "tagline": "",
   "places": [],
   "error": "Could not find information about this person"
 }
@@ -104,20 +127,24 @@ Return ONLY the JSON object, no markdown formatting or additional text.`;
       if (!modelsToTry.includes(fb)) modelsToTry.push(fb);
     }
 
+    // Start Wikipedia portrait fetch concurrently with Gemini calls
+    const portraitPromise = fetchWikipediaPortrait(name);
+
     let lastError: unknown = null;
 
     for (let i = 0; i < modelsToTry.length; i++) {
       const currentModel = modelsToTry[i];
       try {
         const data = await tryGenerate(currentModel, prompt);
+        const portraitUrl = await portraitPromise;
 
         // Cache and record stats under the model that actually worked
         if (isRedisConfigured() && data.places && data.places.length > 0) {
-          await cacheResult(name, currentModel, data.places);
+          await cacheResult(name, currentModel, data.places, data.tagline, portraitUrl);
           await updateStats(name, currentModel);
         }
 
-        return NextResponse.json({ ...data, model: currentModel });
+        return NextResponse.json({ ...data, portraitUrl, model: currentModel });
       } catch (error) {
         lastError = error;
 

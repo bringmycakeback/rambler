@@ -41,6 +41,8 @@ function HomeContent() {
   const [visibleCount, setVisibleCount] = useState(0);
   const [selectedModel, setSelectedModel] = useState("gemini-2.0-flash");
   const [statusMessage, setStatusMessage] = useState("");
+  const [tagline, setTagline] = useState("");
+  const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   const hasAutoSearched = useRef(false);
@@ -95,6 +97,8 @@ function HomeContent() {
     setFigureName(name);
     setPlaces([]);
     setVisibleCount(0);
+    setTagline("");
+    setPortraitUrl(null);
     setStatusMessage(`Querying Gemini API · ${selectedModel}`);
 
     try {
@@ -122,6 +126,8 @@ function HomeContent() {
             : `Response from Gemini · ${selectedModel}`
         );
         setPlaces(data.places || []);
+        setTagline(data.tagline || "");
+        setPortraitUrl(data.portraitUrl || null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -213,6 +219,8 @@ function HomeContent() {
                 error={error}
                 isLoading={isLoading}
                 visibleCount={visibleCount}
+                tagline={tagline}
+                portraitUrl={portraitUrl}
               />
             </section>
           </div>

@@ -22,6 +22,8 @@ interface CachedResult {
   }>;
   model: string;
   cachedAt: string;
+  tagline?: string;
+  portraitUrl?: string | null;
 }
 
 interface FigureStats {
@@ -56,7 +58,9 @@ export async function getCachedResult(
 export async function cacheResult(
   name: string,
   model: string,
-  places: CachedResult["places"]
+  places: CachedResult["places"],
+  tagline?: string,
+  portraitUrl?: string | null
 ): Promise<void> {
   const normalizedName = normalizeName(name);
   const key = `${CACHE_PREFIX}${normalizedName}:${model}`;
@@ -65,6 +69,8 @@ export async function cacheResult(
     places,
     model,
     cachedAt: new Date().toISOString(),
+    tagline,
+    portraitUrl,
   };
 
   try {

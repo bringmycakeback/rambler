@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Place {
   name: string;
@@ -16,6 +16,8 @@ interface PlacesListProps {
   error?: string;
   isLoading: boolean;
   visibleCount: number;
+  tagline?: string;
+  portraitUrl?: string | null;
 }
 
 export default function PlacesList({
@@ -24,7 +26,24 @@ export default function PlacesList({
   error,
   isLoading,
   visibleCount,
+  tagline,
+  portraitUrl,
 }: PlacesListProps) {
+  const [imgError, setImgError] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Reset image error state when portraitUrl changes
+  useEffect(() => {
+    setImgError(false);
+  }, [portraitUrl]);
+
+  // Auto-scroll to latest place
+  useEffect(() => {
+    if (visibleCount > 0) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [visibleCount]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -66,21 +85,30 @@ export default function PlacesList({
     );
   }
 
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (visibleCount > 0) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    }
-  }, [visibleCount]);
-
   return (
     <div className="flex flex-col min-h-full">
       <div className="sticky top-0 z-10 bg-[var(--color-cream)] border-b border-[var(--color-warm-gray-light)] pb-6 mb-10">
-        <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-warm-gray)] mb-3">The Journey of</p>
-        <h2 className="text-3xl font-serif font-light text-[var(--color-charcoal)] italic">
-          {figureName}
-        </h2>
+        <div className="flex items-start gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-warm-gray)] mb-3">The Journey of</p>
+            <h2 className="text-3xl font-serif font-light text-[var(--color-charcoal)] italic">
+              {figureName}
+            </h2>
+            {tagline && (
+              <p className="text-sm text-[var(--color-warm-gray)] font-light mt-2 leading-snug">
+                {tagline}
+              </p>
+            )}
+          </div>
+          {portraitUrl && !imgError && (
+            <img
+              src={portraitUrl}
+              alt={figureName}
+              onError={() => setImgError(true)}
+              className="w-16 h-20 md:w-20 md:h-24 object-cover object-top rounded-sm flex-shrink-0 opacity-90"
+            />
+          )}
+        </div>
       </div>
       <div className="space-y-10">
         {places.slice(0, visibleCount).map((place, index) => (
