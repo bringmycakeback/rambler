@@ -32,7 +32,7 @@ export async function GET() {
         name: model.displayName,
       }))
       .sort((a: { name: string }, b: { name: string }) =>
-        a.name.localeCompare(b.name)
+        b.name.localeCompare(a.name)
       );
 
     return NextResponse.json({ models });
