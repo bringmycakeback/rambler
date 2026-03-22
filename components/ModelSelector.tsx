@@ -30,6 +30,10 @@ export default function ModelSelector({
           setError(data.error);
         } else {
           setModels(data.models);
+          const ids = data.models.map((m: Model) => m.id);
+          if (ids.length > 0 && !ids.includes(selectedModel)) {
+            onModelChange(ids[0]);
+          }
         }
       } catch {
         setError("Failed to load models");
