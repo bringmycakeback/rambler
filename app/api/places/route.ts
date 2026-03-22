@@ -59,7 +59,7 @@ async function tryGenerate(
 export async function POST(request: NextRequest) {
   try {
     const { name, model: modelId } = await request.json();
-    const selectedModel = modelId || "gemini-2.0-flash";
+    const selectedModel = modelId || "gemini-3.0-flash-preview";
 
     if (!name || typeof name !== "string") {
       return NextResponse.json(

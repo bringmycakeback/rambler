@@ -39,7 +39,7 @@ function HomeContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [visibleCount, setVisibleCount] = useState(0);
-  const [selectedModel, setSelectedModel] = useState("gemini-2.0-flash");
+  const [selectedModel, setSelectedModel] = useState("gemini-3.0-flash-preview");
   const [statusMessage, setStatusMessage] = useState("");
   const [tagline, setTagline] = useState("");
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
