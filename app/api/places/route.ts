@@ -25,11 +25,9 @@ async function fetchWikipediaPortrait(name: string): Promise<string | null> {
 }
 
 const FALLBACK_MODELS = [
-  "gemini-2.0-flash",
   "gemini-2.5-flash",
+  "gemini-2.0-flash",
   "gemini-2.0-flash-lite",
-  "gemini-3.0-flash-preview",
-  "gemini-3.0-pro-preview",
 ];
 
 function isRetryableError(error: unknown): boolean {
@@ -59,7 +57,7 @@ async function tryGenerate(
 export async function POST(request: NextRequest) {
   try {
     const { name, model: modelId } = await request.json();
-    const selectedModel = modelId || "gemini-3.0-flash-preview";
+    const selectedModel = modelId || "gemini-2.5-flash";
 
     if (!name || typeof name !== "string") {
       return NextResponse.json(
